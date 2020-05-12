@@ -1,6 +1,6 @@
 # c4f-timetracker
 MSDN - Coding 4 Fun - Desktop Time Tracker
-_copied from [Codeplex archive](https://archive.codeplex.com/?p=timetracker)_
+_copied from [CodePlex archive](https://archive.codeplex.com/?p=timetracker)_
 
 
 Keep track of time spent on your projects with this C\# Windows forms application that includes fully-commented source code. It runs from your system tray and makes it easy to punch in and out and view totals.

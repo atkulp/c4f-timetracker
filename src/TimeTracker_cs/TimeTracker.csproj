@@ -1,0 +1,151 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{EF4FCA63-1290-4B6C-A5F0-EF05F2E08C15}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TimeTracker</RootNamespace>
+    <AssemblyName>TimeTracker</AssemblyName>
+    <ApplicationIcon>Resources\ClockIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.ReportViewer.Common, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.ReportViewer.WinForms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DataTier.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="ProjectsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProjectsForm.Designer.cs">
+      <DependentUpon>ProjectsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProjectsListControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ProjectsListControl.Designer.cs">
+      <DependentUpon>ProjectsListControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProjectToolStripMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="ProjectsForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ProjectsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ReportForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>ReportForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="StringInputForm.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>StringInputForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TimeDetailsControl.resx">
+      <SubType>Designer</SubType>
+      <DependentUpon>TimeDetailsControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="TimeTrackerDataSet.xsc">
+      <DependentUpon>TimeTrackerDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="TimeTrackerDataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>TimeTrackerDataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TimeTrackerDataSet.xss">
+      <DependentUpon>TimeTrackerDataSet.xsd</DependentUpon>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="ReportForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ReportForm.Designer.cs">
+      <DependentUpon>ReportForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="StringInputForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="StringInputForm.Designer.cs">
+      <DependentUpon>StringInputForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TimeDetailsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="TimeDetailsControl.Designer.cs">
+      <DependentUpon>TimeDetailsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TimeTrackerDataSet.cs">
+      <DependentUpon>TimeTrackerDataSet.xsd</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="TimeTrackerDataSet.Designer.cs">
+      <DependentUpon>TimeTrackerDataSet.xsd</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="TimeTrackerEvent.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\ClockIcon.ico" />
+    <Content Include="Resources\ClockIcon_in.ico" />
+    <Content Include="Resources\ClockIcon_out.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
