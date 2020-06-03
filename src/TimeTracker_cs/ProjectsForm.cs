@@ -3,16 +3,24 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Web.UI.WebControls;
 using System.Windows.Forms;
 
 using Microsoft.Win32;
+using OfficeOpenXml;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
+using OfficeOpenXml.Style;
+using OfficeOpenXml.Table;
 
 namespace TimeTracker
 {
     public partial class ProjectsForm : Form
     {
-        string notifyIconTitle = "Time Tracker";
+        readonly string notifyIconTitle = "Time Tracker";
         DateTime standbyTime = DateTime.MinValue;
 
         // Keep track of all project menu items so nothing is lost
@@ -78,10 +86,9 @@ namespace TimeTracker
                     punchInOutToolStripMenuItem.Text = "Punch Out";
                     punchOutAtToolStripMenuItem.Enabled = true;
 
-                    tooltip = string.Format("{0} - Punched in @ {1:t} ({2})",
-                        notifyIconTitle, DateTime.Now, projectName);
+                    tooltip = $"{notifyIconTitle} - Punched in @ {DateTime.Now:t} ({projectName})";
 
-                    timeTrackerNotifyIcon.Icon = Properties.Resources.ClockIcon;
+                    timeTrackerNotifyIcon.Icon = Properties.Resources.ClockIcon_in;
                 }
             }
             else
@@ -90,13 +97,12 @@ namespace TimeTracker
                 punchOutAtToolStripMenuItem.Enabled = false;
 
                 // Even if already punched out, update the text
-                tooltip = string.Format("{0} - Punched out ({1})",
-                   notifyIconTitle, projectName);
+                tooltip = $"{notifyIconTitle} - Punched out ({projectName})";
 
-                timeTrackerNotifyIcon.Icon = Properties.Resources.ClockIcon_out;
+                timeTrackerNotifyIcon.Icon = Properties.Resources.ClockIcon;
             }
 
-            if (tooltip.Length > 63) tooltip = tooltip.Substring(0, 60) + "...";
+                if (tooltip.Length > 63) tooltip = tooltip.Substring(0, 60) + "...";
             timeTrackerNotifyIcon.Text = tooltip;
         }
 
@@ -165,8 +171,7 @@ namespace TimeTracker
 
         private void punchOutAtToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string prompt = string.Format("Please specify punch out time (In at {0:HH:mm})",
-                dt.CurrentTimeEntryRow.StartTime);
+            string prompt = $"Please specify punch out time (In at {dt.CurrentTimeEntryRow.StartTime:HH:mm})";
 
             StringInputForm input =
                 new StringInputForm(prompt,
@@ -325,16 +330,86 @@ namespace TimeTracker
                 {
                     projectSelectMenuItem_Click(newItem, null);
 
-                    timeTrackerNotifyIcon.Text = string.Format("{0} - Punched out ({1})",
-                        notifyIconTitle, row.ProjectName);
+                    timeTrackerNotifyIcon.Text = $"{notifyIconTitle} - Punched out ({row.ProjectName})";
                 }
             }
         }
 
-        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        private void toolStripMenuItemExport_Click(object sender, EventArgs e)
         {
-            ReportForm rf = new ReportForm();
-            rf.ShowDialog();
+            ExportData();
+        }
+
+        private void ExportData()
+        {
+            // Load last set save location
+            var savePath = string.IsNullOrWhiteSpace(Properties.Settings.Default.LastFileExportPath)
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "TimeTracking.xlsx")
+                : Properties.Settings.Default.LastFileExportPath;
+
+            // Prompt for save path
+            var saveFileDialog1 = new SaveFileDialog
+            {
+                Title = "Export in Excel Format",
+                Filter = "Excel Document|*.xlsx",
+                FileName = savePath
+            };
+
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK && saveFileDialog1.FileName != "")
+            {
+                savePath = saveFileDialog1.FileName;
+
+                using (ExcelPackage pck = new ExcelPackage())
+                {
+                    using (ExcelWorksheet workSheet = pck.Workbook.Worksheets.Add("Time Entries"))
+                    {
+                        var tableCells = workSheet.Cells["A1:D1"];
+                        tableCells.Style.Font.Bold = true;
+                        tableCells.Style.Font.Color.SetColor(Color.Ivory);
+                        tableCells.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                        tableCells.Style.Fill.BackgroundColor.SetColor(Color.Navy);
+
+                        var table = workSheet.Tables.Add(tableCells, "Entries");
+                        table.Columns[0].Name = "Project";
+                        table.Columns[1].Name = "Start";
+                        table.Columns[2].Name = "Stop";
+                        table.Columns[3].Name = "Duration (minutes)";
+                        table.Columns[3].TotalsRowFunction = RowFunctions.Sum;
+                        table.ShowHeader = true;
+                        table.ShowTotal = true;
+
+                        var row = 2;
+
+                        foreach (var line in dt.DataSet.TimeEntries)
+                        {
+                            workSheet.InsertRow(row, 1);
+                            workSheet.Cells[$"A{row}"].Value = line.ProjectsRow.ProjectName;
+                            workSheet.Cells[$"B{row}"].Value = line.StartTime;
+                            workSheet.Cells[$"B{row}"].Style.Numberformat.Format = "mm/dd/yyyy hh:mm";
+                            workSheet.Cells[$"C{row}"].Value = line.EndTime;
+                            workSheet.Cells[$"C{row}"].Style.Numberformat.Format = "mm/dd/yyyy hh:mm";
+                            workSheet.Cells[$"D{row}"].Value = line.EndTime.Subtract(line.StartTime).TotalMinutes;
+                            workSheet.Cells[$"D{row}"].Style.Numberformat.Format = "#.00";
+                            row++;
+                        }
+
+                        // Set decimal format for total row sum
+                        workSheet.Cells[$"D{row}"].Style.Numberformat.Format = "#.00";
+
+                        workSheet.Cells.AutoFitColumns();
+                        workSheet.Workbook.CalcMode = ExcelCalcMode.Automatic;
+
+                        pck.SaveAs(new FileInfo(savePath));
+                    }
+
+                    // Update save location setting
+                    Properties.Settings.Default.LastFileExportPath = savePath;
+                    Properties.Settings.Default.Save();
+
+                    // Find and display save location for convenience
+                    System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{savePath}\"");
+                }
+            }
         }
 
         #region "DataTier Event Handlers"
@@ -406,5 +481,10 @@ namespace TimeTracker
             }
         }
         #endregion
+
+        private void locateXmlFilebutton_Click(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{dt.XmlDataPath}\"");
+        }
     }
 }

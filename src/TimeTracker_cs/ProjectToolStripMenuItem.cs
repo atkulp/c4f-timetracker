@@ -7,22 +7,15 @@ namespace TimeTracker
 {
     public class ProjectToolStripMenuItem : ToolStripMenuItem
     {
-        private TimeTracker.TimeTrackerDataSet.ProjectsRow _projectRow;
-
-        public TimeTracker.TimeTrackerDataSet.ProjectsRow ProjectRow
-        {
-            get { return _projectRow; }
-            set { _projectRow = value; }
-        }
+        public TimeTracker.TimeTrackerDataSet.ProjectsRow ProjectRow { get; set; }
 
         public ProjectToolStripMenuItem(TimeTracker.TimeTrackerDataSet.ProjectsRow projectRow)
         {
-            this.Name = "MenuItem:Project" + projectRow.ProjectID;
+            this.Name = $"MenuItem:Project{projectRow.ProjectID}";
             this.Text = projectRow.ProjectName;
 
-            _projectRow = projectRow;
+            ProjectRow = projectRow;
             this.Visible = projectRow.Active;
-
         }
     }
 }

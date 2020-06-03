@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace TimeTracker
 {
@@ -9,49 +7,31 @@ namespace TimeTracker
 
     public class TimeTrackerErrorEvent : EventArgs
     {
-        private Exception _internalException;
-        private string _message;
-
         public TimeTrackerErrorEvent(string message) : this(message, null)
         {
         }
 
         public TimeTrackerErrorEvent(string message, Exception nestedException)
         {
-            _message = message;
-            _internalException = nestedException;
+            Message = message;
+            InternalException = nestedException;
         }
 
-        public Exception InternalException
-        {
-            get { return _internalException; }
-        }
+        public Exception InternalException { get; }
 
-        public string Message
-        {
-            get { return _message; }
-        }
+        public string Message { get; }
     }
 
     public class TimeTrackerEvent : EventArgs
     {
-        private TimeTrackerDataSet.TimeEntriesRow _timeEntry;
-        private TimeTrackerDataSet.ProjectsRow _projectEntry;
-
         public TimeTrackerEvent(TimeTrackerDataSet.ProjectsRow projectEntry, TimeTrackerDataSet.TimeEntriesRow timeEntry)
         {
-            _projectEntry = projectEntry;
-            _timeEntry = timeEntry;
+            ProjectEntry = projectEntry;
+            TimeEntry = timeEntry;
         }
 
-        public TimeTrackerDataSet.TimeEntriesRow TimeEntry
-        {
-            get { return _timeEntry; }
-        }
+        public TimeTrackerDataSet.TimeEntriesRow TimeEntry { get; }
 
-        public TimeTrackerDataSet.ProjectsRow ProjectEntry
-        {
-            get { return _projectEntry; }
-        }
+        public TimeTrackerDataSet.ProjectsRow ProjectEntry { get; }
     }
 }

@@ -7,6 +7,9 @@ using System.Xml.Serialization;
 using System.IO;
 
 using System.Data;
+using System.Linq;
+using System.Diagnostics;
+using static TimeTracker.TimeTrackerDataSet;
 
 namespace TimeTracker
 {
@@ -28,9 +31,16 @@ namespace TimeTracker
             get { return ds; }
         }
 
+        public string XmlDataPath { get; }
+        public string XmlBackupPath { get; }
+
         public DataTier(TimeTrackerDataSet timeTrackerDataSet)
         {
             ds = timeTrackerDataSet;
+
+            var folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            XmlDataPath = Path.Combine(folderPath, "TimeTracking.xml");
+            XmlBackupPath = Path.Combine(folderPath, "TimeTracking.xml.bak");
 
             LoadEntries();
 
@@ -79,13 +89,14 @@ namespace TimeTracker
 
         void Projects_ProjectsRowChanged(object sender, TimeTrackerDataSet.ProjectsRowChangeEvent e)
         {
-            if (e.Action == DataRowAction.Add)
+            switch (e.Action)
             {
-                RaiseProjectAdded(e.Row);
-            }
-            else if (e.Action == DataRowAction.Change)
-            {
-                RaiseProjectModified(e.Row);
+                case DataRowAction.Add:
+                    RaiseProjectAdded(e.Row);
+                    break;
+                case DataRowAction.Change:
+                    RaiseProjectModified(e.Row);
+                    break;
             }
         }
 
@@ -102,8 +113,7 @@ namespace TimeTracker
 
         public void AddNewProject(string projectName)
         {
-            TimeTracker.TimeTrackerDataSet.ProjectsRow newProjectRow =
-                ds.Projects.NewProjectsRow();
+            var newProjectRow = ds.Projects.NewProjectsRow();
             newProjectRow.ProjectName = projectName;
             ds.Projects.AddProjectsRow(newProjectRow);
 
@@ -113,21 +123,18 @@ namespace TimeTracker
         private void CheckForOpenTimeEntries()
         {
             // Check for any open time entries to close
-            TimeTracker.TimeTrackerDataSet.TimeEntriesRow[] openTimeEntryRows =
-                (TimeTracker.TimeTrackerDataSet.TimeEntriesRow[])
-                ds.TimeEntries.Select("EndTime is NULL");
+            var openTimeEntryRows = (TimeEntriesRow[])ds.TimeEntries.Select("EndTime is NULL");
 
             if (openTimeEntryRows.Length > 0)
             {
-                foreach (TimeTracker.TimeTrackerDataSet.TimeEntriesRow row in openTimeEntryRows)
+                foreach (var row in openTimeEntryRows)
                 {
                     row.EndTime = DateTime.Now;
                 }
 
                 SaveEntries();
 
-                RaiseTimeTrackerError("Not all time entries (" + openTimeEntryRows.Length +
-                    ") were closed.");
+                RaiseTimeTrackerError($"Not all time entries ({openTimeEntryRows.Length}) were closed.");
             }
         }
 
@@ -136,16 +143,15 @@ namespace TimeTracker
             //If already punched in, no need to punch in
             if (_currentTimeEntryRow != null) return;
 
-            if (_currentProjectRow != null)
-            {
-                _currentTimeEntryRow = ds.TimeEntries.NewTimeEntriesRow();
-                _currentTimeEntryRow.StartTime = DateTime.Now;
-                _currentTimeEntryRow.ProjectsRow = _currentProjectRow;
-                ds.TimeEntries.AddTimeEntriesRow(_currentTimeEntryRow);
+            // This should never happen...
+            Debug.Assert(_currentProjectRow != null, "Unable to punch in when CurrentProjectRow is not set");
 
-                RaiseUserPunchedIn(_currentProjectRow, _currentTimeEntryRow);
-            }
-            else throw new InvalidOperationException("Unable to punch in when CurrentProjectRow is not set");
+            _currentTimeEntryRow = ds.TimeEntries.NewTimeEntriesRow();
+            _currentTimeEntryRow.StartTime = DateTime.Now;
+            _currentTimeEntryRow.ProjectsRow = _currentProjectRow;
+            ds.TimeEntries.AddTimeEntriesRow(_currentTimeEntryRow);
+
+            RaiseUserPunchedIn(_currentProjectRow, _currentTimeEntryRow);
         }
 
         public void PunchOut()
@@ -175,21 +181,13 @@ namespace TimeTracker
         /// </summary>
         public void LoadEntries()
         {
-            bool success = false;
             try
             {
-                string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string fullPath = Path.Combine(folderPath, "TimeTracking.xml");
-                ds.ReadXml(fullPath, XmlReadMode.IgnoreSchema);
-                success = true;
+                ds.ReadXml(XmlDataPath, XmlReadMode.IgnoreSchema);
             }
-            catch (Exception x)
+            catch (Exception)
             {
                 //success = ReadBackupEntries();
-            }
-
-            if (!success )
-            {
                 RaiseTimeTrackerError("Error reading time entries and no good backup found.  Using new database.");
             }
         }
@@ -200,18 +198,14 @@ namespace TimeTracker
 
             try
             {
-                string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string fullPath = Path.Combine(folderPath, "TimeTracking.xml");
-                string fullPathBackup = Path.Combine(folderPath, "TimeTracking.xml.bak");
-
-                if (File.Exists(fullPathBackup))
+                if (File.Exists(XmlBackupPath))
                 {
-                    ds.ReadXml(fullPathBackup, XmlReadMode.IgnoreSchema);
+                    ds.ReadXml(XmlBackupPath, XmlReadMode.IgnoreSchema);
 
-                    if (File.Exists(fullPath))
-                        File.Delete(fullPath);
+                    if (File.Exists(XmlDataPath))
+                        File.Delete(XmlDataPath);
 
-                    File.Copy(fullPathBackup, fullPath);
+                    File.Copy(XmlBackupPath, XmlDataPath);
 
                     RaiseTimeTrackerError("Error occured reading data file.  Using backup copy (may be missing data).");
 
@@ -233,17 +227,15 @@ namespace TimeTracker
 
             try
             {
-                //if (File.Exists("TimeTracking.xml.bak"))
-                //    File.Delete("TimeTracking.xml.bak");
+                //if (File.Exists(XmlBackupPath))
+                //    File.Delete(XmlBackupPath);
 
-                //if (File.Exists("TimeTracking.xml"))
-                //    File.Move("TimeTracking.xml", "TimeTracking.xml.bak");
+                //if (File.Exists(XmlDataPath))
+                //    File.Move(XmlDataPath, XmlBackupPath);
 
                 //ds.AcceptChanges();
-                string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string fullPath = Path.Combine(folderPath, "TimeTracking.xml");
 
-                ds.WriteXml(fullPath, XmlWriteMode.IgnoreSchema);
+                ds.WriteXml(XmlDataPath, XmlWriteMode.IgnoreSchema);
             }
             catch (Exception x)
             {
@@ -255,44 +247,37 @@ namespace TimeTracker
         #region "Internal convenience methods for raising events"
         private void RaiseProjectAdded(TimeTrackerDataSet.ProjectsRow projectEntry)
         {
-            if (ProjectAdded != null)
-                ProjectAdded(this, new TimeTrackerEvent(projectEntry, null));
+            ProjectAdded?.Invoke(this, new TimeTrackerEvent(projectEntry, null));
         }
 
         private void RaiseProjectModified(TimeTrackerDataSet.ProjectsRow projectEntry)
         {
-            if (ProjectModified != null)
-                ProjectModified(this, new TimeTrackerEvent(projectEntry, null));
+            ProjectModified?.Invoke(this, new TimeTrackerEvent(projectEntry, null));
         }
 
         private void RaiseProjectDeleted(TimeTrackerDataSet.ProjectsRow projectEntry)
         {
-            if (ProjectDeleted != null)
-                ProjectDeleted(this, new TimeTrackerEvent(projectEntry, null));
+            ProjectDeleted?.Invoke(this, new TimeTrackerEvent(projectEntry, null));
         }
 
         private void RaiseUserPunchedIn(TimeTrackerDataSet.ProjectsRow projectEntry, TimeTrackerDataSet.TimeEntriesRow timeEntryRow)
         {
-            if (UserPunchedIn != null)
-                UserPunchedIn(this, new TimeTrackerEvent(projectEntry, timeEntryRow));
+            UserPunchedIn?.Invoke(this, new TimeTrackerEvent(projectEntry, timeEntryRow));
         }
 
         private void RaiseUserPunchedOut(TimeTrackerDataSet.ProjectsRow projectEntry, TimeTrackerDataSet.TimeEntriesRow timeEntryRow)
         {
-            if (UserPunchedOut != null)
-                UserPunchedOut(this, new TimeTrackerEvent(projectEntry, timeEntryRow));
+            UserPunchedOut?.Invoke(this, new TimeTrackerEvent(projectEntry, timeEntryRow));
         }
 
         private void RaiseTimeTrackerError(string message)
         {
-            if( TimeTrackerError != null )
-                TimeTrackerError(this, new TimeTrackerErrorEvent(message));
+            TimeTrackerError?.Invoke(this, new TimeTrackerErrorEvent(message));
         }
 
         private void RaiseTimeTrackerError(string message, Exception nestedException)
         {
-            if( TimeTrackerError != null )
-                TimeTrackerError(this, new TimeTrackerErrorEvent(message, nestedException));
+            TimeTrackerError?.Invoke(this, new TimeTrackerErrorEvent(message, nestedException));
         }
         #endregion
     }

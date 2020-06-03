@@ -35,6 +35,7 @@ namespace TimeTracker
                 else
                 {
                     MessageBox.Show("Another instance of TimeTracker is already running.");
+                    // TODO: Alternatively, simply open the running instance by sending it a message...
                 }
             }
         }

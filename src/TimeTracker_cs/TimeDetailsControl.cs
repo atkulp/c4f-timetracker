@@ -17,9 +17,8 @@ namespace TimeTracker
             InitializeComponent();
 
             // Initialize DateTimePicker controls
-            DateTime today = DateTime.Now.Date;
-            startDateTimePicker.Value = today.AddDays(-30);
-            endDateTimePicker.Value = today;
+            startDateTimePicker.Value = DateTime.Now.Date.AddDays(-30);
+            endDateTimePicker.Value = DateTime.Now.Date;
 
         }
 
@@ -59,7 +58,7 @@ namespace TimeTracker
             TimeSpan projectTime, totalCumulative = new TimeSpan();
             TreeNode projectNode;
 
-            foreach (TimeTrackerDataSet.ProjectsRow pRow in ds.Projects.Select("", "ProjectName"))
+            foreach (TimeTrackerDataSet.ProjectsRow pRow in ds.Projects.OrderBy(p => p.ProjectName))
             {
                 projectNode = projectsTreeView.Nodes.Add(pRow.ProjectName);
 
@@ -78,7 +77,7 @@ namespace TimeTracker
             }
 
             // At this point totalCumulative time truly is
-            computeLabel.Text = string.Format("Total time is {0}", FormatTimeSpan(totalCumulative));
+            computeLabel.Text = $"Total time is {FormatTimeSpan(totalCumulative)}";
             
         }
 
@@ -111,13 +110,13 @@ namespace TimeTracker
 
                     projectDay = tRow.StartTime.Date;
 
-                    dayNode = parent.Nodes.Add(string.Format("{0:d} ", projectDay));
+                    dayNode = parent.Nodes.Add($"{projectDay:d} ");
                 }
 
                 entryTime = tRow.EndTime.Subtract(tRow.StartTime);
 
                 // Add current time entry
-                entryNode = dayNode.Nodes.Add(string.Format("{0:t}-{1:t} ", tRow.StartTime, tRow.EndTime));
+                entryNode = dayNode.Nodes.Add($"{tRow.StartTime:t}-{tRow.EndTime:t} ");
 
                 projectCumulative += entryTime;
                 dayCumulative += entryTime;
@@ -143,9 +142,8 @@ namespace TimeTracker
         {
             StringBuilder buf = new StringBuilder();
 
-            double totalHours = 0;
-            totalHours += (span.Days * 24.0) + span.Hours + (span.Minutes / 60.0);
-            buf.AppendFormat(" ({0:#0.#}", totalHours).Append(" hours");
+            double totalHours = (span.Days * 24.0) + span.Hours + (span.Minutes / 60.0);
+            buf.AppendFormat(" ({0:#0.#} hours", totalHours);
             buf.AppendFormat(" - {0:#0} hrs, {1:00} mins, {2:00 secs})",
                 ((span.Days * 24.0) + span.Hours), span.Minutes, span.Seconds);
 
